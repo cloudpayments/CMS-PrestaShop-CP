@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+	<name>cloudpayments</name>
+	<displayName><![CDATA[ Cloudpayments]]></displayName>
+	<version><![CDATA[1.0.0]]></version>
+	<description><![CDATA[Оплата товаров и услуг с помощью сервиса оплаты  Cloudpayments]]></description>
+	<author><![CDATA[Cloudpayments]]></author>
+	<tab><![CDATA[payments_gateways]]></tab>
+	<confirmUninstall><![CDATA[Вы уверены в том, что хотите удалить модуль?]]></confirmUninstall>
+	<is_configurable>1</is_configurable>
+	<need_instance>0</need_instance>
+	<limited_countries></limited_countries>
+</module>

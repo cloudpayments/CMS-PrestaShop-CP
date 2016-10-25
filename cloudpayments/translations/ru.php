@@ -1,0 +1,35 @@
+<?php
+
+global $_MODULE;
+$_MODULE = array();
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_e740f3fa42937224847169cd3f9c2978'] = ' Cloudpayments';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_c58e81564851e9f12e92e7d399d786f9'] = 'Оплата товаров и услуг с помощью сервиса оплаты  Cloudpayments';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_876f23178c29dc2552c0b48bf23cd9bd'] = 'Вы уверены в том, что хотите удалить модуль?';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_05fbaa9cb478d838df9615358bf4a42c'] = 'Пожалуйста, выполните настройку модуля';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_62047d801b1b0f6f65daaeeb04f830ce'] = 'Public ID';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_3d2e43852565e2d3d41afc07ba46d401'] = 'Пароль';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_f447ac856e7e72435904956e3b15f433'] = 'Регион';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_abe147dff3e341ee9378b307eed833f0'] = 'Тип оплаты';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_c888438d14855d7d96a2724ee9c306bd'] = 'Настройки сохранены';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_3ee3b55e8582ba3de861fa0abb1e379d'] = 'Поле \"\'.$item[\'name\'].\'\" не может быть пустым';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_005ec228f686a4d8a8b8e285e83136c0'] = 'Поле \"\'.$item[\'name\'].\'\"  должно быть числом';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_f4f70727dc34561dfde1a3c529b6205c'] = 'Настройки';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_37e31370e4ab230ff6fba12cc6390aff'] = 'Пароль для API';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_5feb168ca8fb495dcc89b1208cdeb919'] = 'Россия';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_7c1a943bf29d2c753fb935e99428482c'] = 'Казахстан';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_f20d26bfed8376985e66ade19e580edf'] = 'одностадийный';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_66cd6fffc49e086508eeea8eaad999c0'] = 'двустадийный';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_c9cc8cce247e49bae79f15173ce97354'] = 'Сохранить';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_630f6dc397fe74e52d5189e2c80f282b'] = 'Вернуться';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_ddaec38afe1d07536eacbefa29ff6776'] = 'Ваши callback\'и:';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_69aa4e0e17702b3c6b12c03da091a204'] = 'Оплата заказа в магазине \"';
+$_MODULE['<{cloudpayments}prestashop>panel_6d89178b87e47de1fd28e01a721875fa'] = 'настройка платежа';
+$_MODULE['<{cloudpayments}prestashop>panel_d59270ba6eb90e5e2a3e6d2c4e6bdffc'] = 'Общие';
+$_MODULE['<{cloudpayments}prestashop>panel_e9cf3351ab558a201bd6978d5502ff6c'] = 'Двустадийный платеж';
+$_MODULE['<{cloudpayments}prestashop>panel_cf27167bc6c0a38a3f8b9d72e26ee0a6'] = 'Вернуть платеж';
+$_MODULE['<{cloudpayments}prestashop>panel_f6de96a995801dd54a2c49df8d2cea53'] = 'Подтвердить платеж';
+$_MODULE['<{cloudpayments}prestashop>panel_82fa418cc1503e9c1a5da75296ee5ecd'] = 'Отменить платеж';
+$_MODULE['<{cloudpayments}prestashop>panel_4c411d048aa9d0ae0e97947c9d66a5d9'] = 'Вы действительно хотите выполнить данное действие?';
+$_MODULE['<{cloudpayments}prestashop>panel_4d350db3fd829e8e258584b026698d1c'] = 'Операция успешно выполнена.';
+$_MODULE['<{cloudpayments}prestashop>panel_f536a7861c7f903813655b2e76f6f7fa'] = 'Ошибка связи с модулем. Попробуйте позже.';
+$_MODULE['<{cloudpayments}prestashop>payment_afc42825067246018c816d574494194d'] = 'Оплата через CloudPayments';
