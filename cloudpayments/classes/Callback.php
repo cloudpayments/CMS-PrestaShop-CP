@@ -86,7 +86,7 @@ class CloudpaymentsCallback
 		if($invoiceId && $amount && $currency) {
 			$cart = new Cart($invoiceId);
 			if ($cart) {
-				if ($cart->getordertotal(false) == $amount && Currency::getIdByIsoCode($currency) == $cart->id_currency) {
+				if ($cart->getOrderTotal(true) == $amount && Currency::getIdByIsoCode($currency) == $cart->id_currency) {
 					$this->response->code = 0;
 				}
 			}
@@ -96,19 +96,23 @@ class CloudpaymentsCallback
 
 	/**
 	*  Check signature
-	*  @return void
+	*  @return bool
 	*/
 	private function checkSignature() 
 	{
 		$headers   = getallheaders();
+		if (!isset($headers['Content-HMAC'])) {
+		    return false;
+        }
 		$signature = base64_encode(
 			hash_hmac(
-				'sha256', 
+				'SHA256',
 				file_get_contents('php://input'), 
 				Configuration::get('CLOUDPAYMENTS_APIKEY'), 
 				true)
 		);
-		return $headers['Content-Hmac'] == $signature;
+
+		return $headers['Content-HMAC'] == $signature;
 	}
 
 	private function fail(){}
@@ -132,7 +136,7 @@ class CloudpaymentsCallback
 		}
 	}
 
-	public function getReponse()
+	public function getResponse()
 	{
 		return json_encode($this->response);
 	}

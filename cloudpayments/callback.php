@@ -10,4 +10,4 @@ header('Content-Type: application/javascript; charset=utf-8');
 
 $callback = new CloudpaymentsCallback(Tools::getValue('callback_type'));
 
-echo $callback->getReponse();
+echo $callback->getResponse();

@@ -24,6 +24,8 @@ this.pay = function () {
             amount: {$totalPay}, //сумма
             currency: '{$currency}', //валюта
             invoiceId: {$cartId},
+		    accountId: '{$accountId}',
+			data: {$additionalData}
         },
         function (options) { // success
             location.href = '{$redirectUrl}';
