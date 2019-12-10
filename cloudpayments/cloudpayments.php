@@ -9,13 +9,15 @@ class Cloudpayments extends PaymentModule {
         '' => '',
         0  => 0,
         10 => 10,
-        18 => 18,
+        20 => 20,
+        110 => 110,
+        120 => 120,
     );
 
     public function __construct() {
         $this->name                   = 'cloudpayments';
         $this->tab                    = 'payments_gateways';
-        $this->version                = '1.0.0';
+        $this->version                = '1.0.1';
         $this->author                 = 'ipnino.ru';
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
         $this->bootstrap              = true;
@@ -61,11 +63,13 @@ class Cloudpayments extends PaymentModule {
         $output = null;
         if (Tools::isSubmit('submit' . $this->name)) {
             $publicId  = Tools::getValue('CLOUDPAYMENTS_PUBLICID');
-            $region    = Tools::getValue('CLOUDPAYMENTS_REGION');
             $payStage  = Tools::getValue('CLOUDPAYMENTS_PAYSTAGE');
             $apiKey    = Tools::getValue('CLOUDPAYMENTS_APIKEY');
             $kkt       = Tools::getValue('CLOUDPAYMENTS_KKT');
             $taxSystem = Tools::getValue('CLOUDPAYMENTS_TAXATION_SYSTEM');
+            $skin      = Tools::getValue('CLOUDPAYMENTS_SKIN');
+            $language  = Tools::getValue('CLOUDPAYMENTS_LANGUAGE');
+            $currency  = Tools::getValue('CLOUDPAYMENTS_CURRENCY');
 
             $errors = $this->validate(
                 array(
@@ -80,9 +84,19 @@ class Cloudpayments extends PaymentModule {
                         'value' => $apiKey
                     ),
                     array(
-                        'type'  => 'number',
-                        'name'  => $this->l('Region'),
-                        'value' => $region
+                        'type'  => 'string',
+                        'name'  => $this->l('Skin'),
+                        'value' => $skin
+                    ),
+                    array(
+                        'type'  => 'string',
+                        'name'  => $this->l('Language'),
+                        'value' => $skin
+                    ),
+                    array(
+                        'type'  => 'string',
+                        'name'  => $this->l('Currency'),
+                        'value' => $skin
                     ),
                     array(
                         'type'  => 'number',
@@ -108,11 +122,13 @@ class Cloudpayments extends PaymentModule {
                 }
             } else {
                 Configuration::updateValue('CLOUDPAYMENTS_PUBLICID', $publicId);
-                Configuration::updateValue('CLOUDPAYMENTS_REGION', $region);
                 Configuration::updateValue('CLOUDPAYMENTS_PAYSTAGE', $payStage);
                 Configuration::updateValue('CLOUDPAYMENTS_APIKEY', $apiKey);
                 Configuration::updateValue('CLOUDPAYMENTS_KKT', $kkt);
                 Configuration::updateValue('CLOUDPAYMENTS_TAXATION_SYSTEM', $taxSystem);
+                Configuration::updateValue('CLOUDPAYMENTS_SKIN', $skin);
+                Configuration::updateValue('CLOUDPAYMENTS_LANGUAGE', $language);
+                Configuration::updateValue('CLOUDPAYMENTS_CURRENCY', $currency);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
@@ -165,22 +181,75 @@ class Cloudpayments extends PaymentModule {
                     'required' => true
                 ),
                 array(
-                    'type'     => 'radio',
-                    'label'    => $this->l('Region'),
-                    'name'     => 'CLOUDPAYMENTS_REGION',
-                    'values'   => array(
-                        array(
-                            'id'    => 'region_active_on',
-                            'value' => 0,
-                            'label' => $this->l('Russia')
-                        ),
-                        array(
-                            'id'    => 'region_active_off',
-                            'value' => 1,
-                            'label' => $this->l('Kazakhstan')
-                        )
-                    ),
-                    'required' => true
+                    'type'    => 'select',
+                    'class'   => 'fixed-width-xxl',
+                    'label'   => $this->l('Skin'),
+                    'name'    => 'CLOUDPAYMENTS_SKIN',
+                                'options' => array(
+                                     'query' => array(
+                                            array('id' => 'classic', 'name' => $this->l('Classic')),
+                                            array('id' => 'modern', 'name' => $this->l('Modern')),
+                                            array('id' => 'mini', 'name' => $this->l('Mini')),
+                                     ),
+                                'id'    => 'id',
+                                'name'  => 'name',
+                    )
+                ),
+                array(
+                    'type'    => 'select',
+                    'class'   => 'fixed-width-xxl',
+                    'label'   => $this->l('Language'),
+                    'name'    => 'CLOUDPAYMENTS_LANGUAGE',
+                                'options' => array(
+                                     'query' => array(
+                                            array('id' => 'ru-RU', 'name' => $this->l('Russian')),
+                                            array('id' => 'en-US', 'name' => $this->l('English')),
+                                            array('id' => 'lv', 'name' => $this->l('Latvian')),
+                                            array('id' => 'az', 'name' => $this->l('Azerbaijani')),
+                                            array('id' => 'kk', 'name' => $this->l('Russian	ALMT')),
+                                            array('id' => 'kk-KZ', 'name' => $this->l('Kazakh')),
+                                            array('id' => 'uk', 'name' => $this->l('Ukrainian')),
+                                            array('id' => 'pl', 'name' => $this->l('Polish')),
+                                            array('id' => 'pt', 'name' => $this->l('Portuguese')),
+                                            array('id' => 'cs-CZ', 'name' => $this->l('Czech')),
+                                     ),
+                                'id'    => 'id',
+                                'name'  => 'name',
+                    )
+                ),
+                array(
+                    'type'    => 'select',
+                    'class'   => 'fixed-width-xxl',
+                    'label'   => $this->l('Currency'),
+                    'name'    => 'CLOUDPAYMENTS_CURRENCY',
+                                'options' => array(
+                                     'query' => array(
+                                            array('id' => 1, 'name' => $this->l('Site currency')),
+                                            array('id' => 'RUB', 'name' => $this->l('Russian ruble')),
+                                            array('id' => 'EUR', 'name' => $this->l('Euro')),
+                                            array('id' => 'USD', 'name' => $this->l('US dollar')),
+                                            array('id' => 'GBP', 'name' => $this->l('Pound sterlin')),
+                                            array('id' => 'UAH', 'name' => $this->l('Ukrainian hryvnia')),
+                                            array('id' => 'BYN', 'name' => $this->l('Belarusian ruble')),
+                                            array('id' => 'KZT', 'name' => $this->l('Kazakh tenge')),
+                                            array('id' => 'AZN', 'name' => $this->l('Azerbaijani manat')),
+                                            array('id' => 'CHF', 'name' => $this->l('Swiss frank')),
+                                            array('id' => 'CZK', 'name' => $this->l('Czech koruna')),
+                                            array('id' => 'CAD', 'name' => $this->l('Canadian dollar')),
+                                            array('id' => 'PLN', 'name' => $this->l('Polish zloty')),
+                                            array('id' => 'SEK', 'name' => $this->l('Swedish crown')),
+                                            array('id' => 'TRY', 'name' => $this->l('Turkish lira')),
+                                            array('id' => 'CNY', 'name' => $this->l('Chinese yuan')),
+                                            array('id' => 'INR', 'name' => $this->l('Indian rupee')),
+                                            array('id' => 'BRL', 'name' => $this->l('Brazilian real')),
+                                            array('id' => 'ZAL', 'name' => $this->l('South african rand')),
+                                            array('id' => 'UZS', 'name' => $this->l('Bulgarian lev')),
+                                            array('id' => 'BGL', 'name' => $this->l('Uzbek sum')),
+                                            array('id' => 'GEL', 'name' => $this->l('Georgian lari')),
+                                     ),
+                                'id'    => 'id',
+                                'name'  => 'name',
+                    )
                 ),
                 array(
                     'type'     => 'radio',
@@ -272,11 +341,13 @@ class Cloudpayments extends PaymentModule {
 
         // Load current value
         $helper->fields_value['CLOUDPAYMENTS_PUBLICID']        = Configuration::get('CLOUDPAYMENTS_PUBLICID');
-        $helper->fields_value['CLOUDPAYMENTS_REGION']          = Configuration::get('CLOUDPAYMENTS_REGION');
         $helper->fields_value['CLOUDPAYMENTS_PAYSTAGE']        = Configuration::get('CLOUDPAYMENTS_PAYSTAGE');
         $helper->fields_value['CLOUDPAYMENTS_APIKEY']          = Configuration::get('CLOUDPAYMENTS_APIKEY');
         $helper->fields_value['CLOUDPAYMENTS_KKT']             = Configuration::get('CLOUDPAYMENTS_KKT');
         $helper->fields_value['CLOUDPAYMENTS_TAXATION_SYSTEM'] = Configuration::get('CLOUDPAYMENTS_TAXATION_SYSTEM');
+        $helper->fields_value['CLOUDPAYMENTS_SKIN']            = Configuration::get('CLOUDPAYMENTS_SKIN');
+        $helper->fields_value['CLOUDPAYMENTS_LANGUAGE']        = Configuration::get('CLOUDPAYMENTS_LANGUAGE');
+        $helper->fields_value['CLOUDPAYMENTS_CURRENCY']        = Configuration::get('CLOUDPAYMENTS_CURRENCY');
 
         $anotherHtml = '';
         if (Configuration::get('CLOUDPAYMENTS_APIKEY')) {
@@ -287,8 +358,14 @@ class Cloudpayments extends PaymentModule {
                 $callbackUrl . "callback_type=check";
             $anotherHtml .= "<p><strong>Pay</strong>: " .
                 $callbackUrl . "callback_type=pay</p>";
+            $anotherHtml .= "<p><strong>Fail</strong>: " .
+                $callbackUrl . "callback_type=fail</p>";
+            $anotherHtml .= "<p><strong>Confirm</strong>: " .
+                $callbackUrl . "callback_type=confirm</p>";
             $anotherHtml .= "<p><strong>Refund</strong>: " .
                 $callbackUrl . "callback_type=refund</p>";
+            $anotherHtml .= "<p><strong>Cancel</strong>: " .
+                $callbackUrl . "callback_type=cancel</p>";
             $anotherHtml .= "</div>";
         }
 
@@ -303,13 +380,16 @@ class Cloudpayments extends PaymentModule {
 
         $cart          = $this->context->cart;
         $totalPay      = $cart->getOrderTotal(true);
-        $rubCurrencyId = Currency::getIdByIsoCode('RUB');
-        if ($cart->id_currency != $rubCurrencyId) {
-            $fromCurrency = new Currency($cart->id_currency);
-            $toCurrency   = new Currency($rubCurrencyId);
-            $totalPay     = Tools::convertPriceFull($totalPay, $fromCurrency, $toCurrency);
+        
+        if (Configuration::get('CLOUDPAYMENTS_CURRENCY') == 1) {
+            $rubCurrencyId = Currency::getIdByIsoCode('RUB');
+            if ($cart->id_currency != $rubCurrencyId) {
+                $fromCurrency = new Currency($cart->id_currency);
+                $toCurrency   = new Currency($rubCurrencyId);
+                $totalPay     = Tools::convertPriceFull($totalPay, $fromCurrency, $toCurrency);
+            }
         }
-
+        
         $invoiceAddress = new Address($this->context->cart->id_address_invoice);
         $customerPhone  = $invoiceAddress ? $invoiceAddress->phone : '';
         $additionalData = array(
@@ -321,27 +401,28 @@ class Cloudpayments extends PaymentModule {
             $additionalData['cloudPayments']['customerReceipt'] = $this->getReceiptData($customerPhone);
         }
 
+        if (Configuration::get('CLOUDPAYMENTS_CURRENCY') == 1) {
+            $currency1 = 'RUB';
+        }
+        else $currency1 = Configuration::get('CLOUDPAYMENTS_CURRENCY');
+
         $this->context->smarty->assign(array(
             'totalPay'       => $totalPay,
-            'rubCurrencyId'  => $rubCurrencyId,
             'publicId'       => Configuration::get('CLOUDPAYMENTS_PUBLICID'),
+            'skin'           => Configuration::get('CLOUDPAYMENTS_SKIN'),
             'description'    => htmlspecialchars_decode($this->l('Payment order in shop "') . Configuration::get('PS_SHOP_NAME') . '&quot;'),
             'payType'        => Configuration::get('CLOUDPAYMENTS_PAYSTAGE') ? 'auth' : 'charge',
             'path'           => $this->_path,
             'cartId'         => $params['cart']->id,
             'redirectUrl'    => $this->context->link->getModuleLink($this->name, 'success', array()),
-            'currency'       => 'RUB',
+            'currency'       => $currency1,
+            'rubCurrencyId'  => $rubCurrencyId,
+            'language'       => Configuration::get('CLOUDPAYMENTS_LANGUAGE'),
             'accountId'      => $this->context->customer->email,
             'additionalData' => json_encode($additionalData)
         ));
 
-        $widgetDomain = 'widget.cloudpayments.ru';
-
-        if (Configuration::get('CLOUDPAYMENTS_REGION')) {
-            $widgetDomain = 'widget.cloudpayments.kz';
-        }
-
-        $this->context->controller->addJS('https://' . $widgetDomain . '/bundles/cloudpayments');
+        $this->context->controller->addJS('https://widget.cloudpayments.ru/bundles/cloudpayments?cms=PrestaShop');
 
         return $this->display(__FILE__, 'payment.tpl');
     }
@@ -362,19 +443,21 @@ class Cloudpayments extends PaymentModule {
 
         return $payment_options;
     }
-
+    
     public function checkCurrency($cart) {
-        $currency_order    = new Currency($cart->id_currency);
-        $currencies_module = $this->getCurrency($cart->id_currency);
-        if (is_array($currencies_module)) {
-            foreach ($currencies_module as $currency_module) {
-                if ($currency_order->id == $currency_module['id_currency']) {
-                    return true;
+        if (Configuration::get('CLOUDPAYMENTS_CURRENCY') == 1) {
+            $currency_order    = new Currency($cart->id_currency);
+            $currencies_module = $this->getCurrency($cart->id_currency);
+            if (is_array($currencies_module)) {
+                foreach ($currencies_module as $currency_module) {
+                    if ($currency_order->id == $currency_module['id_currency']) {
+                        return true;
+                    }
                 }
             }
+            return false;
         }
-
-        return false;
+        else  return true;
     }
 
     public function getEmbeddedPaymentOption($params) {
@@ -396,17 +479,23 @@ class Cloudpayments extends PaymentModule {
         /** @var Cart $cart */
         $cart     = $this->context->cart;
         $totalPay = $cart->getOrderTotal(true);
-        $currency = new Currency($cart->id_currency);
 
         $invoiceAddress = $this->context->customer->getSimpleAddress($this->context->cart->id_address_invoice);
         $customerPhone  = isset($invoiceAddress['phone']) ? $invoiceAddress['phone'] : '';
+        if (Configuration::get('CLOUDPAYMENTS_CURRENCY') == 1) {
+            $currency = new Currency($cart->id_currency);
+            $currency1 = $currency->iso_code; 
+        }
+        else $currency1 = Configuration::get('CLOUDPAYMENTS_CURRENCY');
         $widgetData     = array(
             'amount'      => $totalPay,
             'publicId'    => Configuration::get('CLOUDPAYMENTS_PUBLICID'),
             'description' => htmlspecialchars_decode($this->l('Payment order in shop "') . Configuration::get('PS_SHOP_NAME') . '&quot;'),
             'invoiceId'   => $params['cart']->id,
             'accountId'   => $this->context->customer->email,
-            'currency'    => $currency->iso_code,
+            'currency'    => $currency1,
+            'skin'        => Configuration::get('CLOUDPAYMENTS_SKIN'),
+            'language'    => Configuration::get('CLOUDPAYMENTS_LANGUAGE'),
             'data'        => array(
                 'name'          => trim($this->context->customer->firstname . ' ' . $this->context->customer->lastname),
                 'phone'         => $customerPhone,
@@ -437,12 +526,15 @@ class Cloudpayments extends PaymentModule {
 
     private function getReceiptData($customerPhone) {
         $cart        = $this->context->cart;
+        $totalPay = $cart->getOrderTotal(true);
         $taxSystem   = Configuration::get('CLOUDPAYMENTS_TAXATION_SYSTEM');
         $receiptData = array(
-            'Items'          => array(),
-            'taxationSystem' => $taxSystem,
-            'email'          => $this->context->customer->email,
-            'phone'          => $customerPhone
+            'Items'           => array(),
+            'taxationSystem'  => $taxSystem,
+            'calculationPlace'=>'www.'.$_SERVER['SERVER_NAME'],
+            'email'           => $this->context->customer->email,
+            'phone'           => $customerPhone,
+            "amounts"         => array("electronic" => $totalPay)
         );
 
         $products = $cart->getProducts();
@@ -477,13 +569,8 @@ class Cloudpayments extends PaymentModule {
      * @param $params
      */
     public function hookActionFrontControllerSetMedia($params) {
-        if ('order' === $this->context->controller->php_self) {
-            //<script> in smarty template removed, so make params in forms and get values in JS
-            $widgetDomain = 'widget.cloudpayments.ru';
 
-            if (Configuration::get('CLOUDPAYMENTS_REGION')) {
-                $widgetDomain = 'widget.cloudpayments.kz';
-            }
+            $widgetDomain = 'widget.cloudpayments.ru';
             $this->context->controller->registerJavascript('cloudpayments_script',
                 'https://' . $widgetDomain . '/bundles/cloudpayments', array(
                     'priority' => 200,
@@ -494,6 +581,6 @@ class Cloudpayments extends PaymentModule {
                     'priority' => 210,
                     //'inline' => true
                 ));
-        }
+
     }
 }
