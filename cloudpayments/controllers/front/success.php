@@ -24,13 +24,9 @@ class CloudpaymentsSuccessModuleFrontController extends ModuleFrontController
 			die(Tools::displayError('This payment method is not available.'));
 
 		$customer = new Customer((int)$this->context->cart->id_customer);
-		$total = $this->context->cart->getOrderTotal(true, Cart::BOTH);
-		
-		$paystage = Configuration::get('CLOUDPAYMENTS_PAYSTAGE');
-		if ($paystage == 0) {$order_status = 'PS_OS_PAYMENT';}
-		else $order_status = 'PS_OS_PREPARATION';
-		
-		$this->module->validateOrder((int)$this->context->cart->id, Configuration::get($order_status), $total, $this->module->displayName, null, array(), null, false, $customer->secure_key);
-		Tools::redirectLink(__PS_BASE_URI__.'order-confirmation.php?key='.$customer->secure_key.'&id_cart='.(int)$this->context->cart->id.'&id_module='.(int)$this->module->id.'&id_order='.(int)$this->module->currentOrder);
+		$order = new Order(
+        		Order::getOrderByCartId((int)$this->context->cart->id)
+        );
+        Tools::redirectLink(__PS_BASE_URI__.'order-confirmation.php?key='.$customer->secure_key.'&id_cart='.(int)$this->context->cart->id.'&id_module='.(int)$this->module->id.'&id_order='.(int)$order->id);
 	}
 }

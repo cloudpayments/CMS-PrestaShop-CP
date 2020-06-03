@@ -52,7 +52,7 @@ class CloudpaymentsCallback
 	*  Check callback
 	*  @return void
 	*/
-	private function check() {
+	function check() {
 		$invoiceId = Tools::getValue('InvoiceId');
 		$amount    = Tools::getValue('Amount');
 		$currency  = Tools::getValue('Currency');
@@ -62,12 +62,28 @@ class CloudpaymentsCallback
 			    if (Configuration::get('CLOUDPAYMENTS_CURRENCY') == 1) {
 			        if ($cart->getOrderTotal(true) == $amount && Currency::getIdByIsoCode($currency) == $cart->id_currency) {
 					    $this->response->code = 0;
+					    $validate = true;
 				    }
 			    }
 			    else {
 				    if ($cart->getOrderTotal(true) == $amount && Configuration::get('CLOUDPAYMENTS_CURRENCY') == $currency) {
 					    $this->response->code = 0;
+					    $validate = true;
 				    }
+			    }
+			    $order = new Order(Order::getOrderByCartId($invoiceId));
+			    if ($validate && $order->id == NULL) {
+				    $customer = new Customer((int)$cart->id_customer);
+        			$Cloudpayments = new Cloudpayments();
+            		$Cloudpayments->validateOrder(
+	        			(int)$cart->id,
+            			Configuration::get('PS_OS_PREPARATION'), $cart->getOrderTotal(),
+            			'Cloudpayments', 
+		        		null, 
+	        			null,
+            			$cart->id_currency, false,
+            			$customer->secure_key
+		        	);
 			    }
 			}
 		}
@@ -87,13 +103,35 @@ class CloudpaymentsCallback
 			    if (Configuration::get('CLOUDPAYMENTS_CURRENCY') == 1) {
 			        if ($cart->getOrderTotal(true) == $amount && Currency::getIdByIsoCode($currency) == $cart->id_currency) {
 					    $this->response->code = 0;
+					    $validate = true;
 				    }
 			    }
 			    else {
 				    if ($cart->getOrderTotal(true) == $amount && Configuration::get('CLOUDPAYMENTS_CURRENCY') == $currency) {
 					    $this->response->code = 0;
+					    $validate = true;
 				    }
 			    }
+				$paystage = Configuration::get('CLOUDPAYMENTS_PAYSTAGE');
+		
+				if ($validate && $paystage == 0) {
+					$order = new Order(Order::getOrderByCartId($invoiceId));
+                	if ($order->id != NULL) {
+                		$history = new OrderHistory();
+                		$history->id_order = $order->id;
+                		$history->changeIdOrderState((int)Configuration::get('PS_OS_PAYMENT'), $history->id_order);
+                		$history->addWithemail();
+                		$history->save();
+				//save payment info
+				$payments = $order->getOrderPaymentCollection();
+				$payments[0]->transaction_id  = Tools::getValue('TransactionId');
+				$payments[0]->card_number     = Tools::getValue('CardFirstSix').Tools::getValue('CardLastFour');
+				$payments[0]->card_brand      = Tools::getValue('CardType');
+				$payments[0]->card_expiration = Tools::getValue('CardExpDate');
+				$payments[0]->card_holder     = Tools::getValue('Name');
+				$payments[0]->update();
+                	}
+				}
 			}
 		}
 	}

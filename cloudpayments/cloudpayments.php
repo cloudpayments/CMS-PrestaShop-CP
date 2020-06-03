@@ -1,4 +1,7 @@
 <?php
+
+use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -17,7 +20,7 @@ class Cloudpayments extends PaymentModule {
     public function __construct() {
         $this->name                   = 'cloudpayments';
         $this->tab                    = 'payments_gateways';
-        $this->version                = '1.0.1';
+        $this->version                = '1.0.2';
         $this->author                 = 'ipnino.ru';
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
         $this->bootstrap              = true;
@@ -42,7 +45,8 @@ class Cloudpayments extends PaymentModule {
 
         if (Tools::version_compare(_PS_VERSION_, '1.7', '>=')) {
             if (!$this->registerHook('paymentOptions') ||
-                !$this->registerHook('actionFrontControllerSetMedia')
+                !$this->registerHook('actionFrontControllerSetMedia') ||
+                !$this->registerHook('actionOrderStatusPostUpdate')
             ) {
                 return false;
             }
@@ -62,14 +66,18 @@ class Cloudpayments extends PaymentModule {
     public function getContent() {
         $output = null;
         if (Tools::isSubmit('submit' . $this->name)) {
-            $publicId  = Tools::getValue('CLOUDPAYMENTS_PUBLICID');
-            $payStage  = Tools::getValue('CLOUDPAYMENTS_PAYSTAGE');
-            $apiKey    = Tools::getValue('CLOUDPAYMENTS_APIKEY');
-            $kkt       = Tools::getValue('CLOUDPAYMENTS_KKT');
-            $taxSystem = Tools::getValue('CLOUDPAYMENTS_TAXATION_SYSTEM');
-            $skin      = Tools::getValue('CLOUDPAYMENTS_SKIN');
-            $language  = Tools::getValue('CLOUDPAYMENTS_LANGUAGE');
-            $currency  = Tools::getValue('CLOUDPAYMENTS_CURRENCY');
+            $publicId      = Tools::getValue('CLOUDPAYMENTS_PUBLICID');
+            $payStage      = Tools::getValue('CLOUDPAYMENTS_PAYSTAGE');
+            $apiKey        = Tools::getValue('CLOUDPAYMENTS_APIKEY');
+            $kkt           = Tools::getValue('CLOUDPAYMENTS_KKT');
+            $kkt_delivered = Tools::getValue('CLOUDPAYMENTS_KKT_DELIVERED');
+            $taxSystem     = Tools::getValue('CLOUDPAYMENTS_TAXATION_SYSTEM');
+            $skin          = Tools::getValue('CLOUDPAYMENTS_SKIN');
+            $language      = Tools::getValue('CLOUDPAYMENTS_LANGUAGE');
+            $currency      = Tools::getValue('CLOUDPAYMENTS_CURRENCY');
+            $method        = Tools::getValue('CLOUDPAYMENTS_METHOD');
+            $object        = Tools::getValue('CLOUDPAYMENTS_OBJECT');
+            $inn           = Tools::getValue('CLOUDPAYMENTS_INN');
 
             $errors = $this->validate(
                 array(
@@ -110,8 +118,24 @@ class Cloudpayments extends PaymentModule {
                     ),
                     array(
                         'type'  => 'number',
+                        'name'  => $this->l('Пробивать второй чек доставки'),
+                        'value' => $kkt_delivered
+                    ),
+                    
+                    array(
+                        'type'  => 'number',
                         'name'  => $this->l('Taxation system'),
                         'value' => $taxSystem
+                    ),
+                    array(
+                        'type'  => 'number',
+                        'name'  => $this->l('Метод олаты'),
+                        'value' => $method
+                    ),
+                    array(
+                        'type'  => 'number',
+                        'name'  => $this->l('Предмет оплаты'),
+                        'value' => $object
                     ),
                 )
             );
@@ -125,10 +149,14 @@ class Cloudpayments extends PaymentModule {
                 Configuration::updateValue('CLOUDPAYMENTS_PAYSTAGE', $payStage);
                 Configuration::updateValue('CLOUDPAYMENTS_APIKEY', $apiKey);
                 Configuration::updateValue('CLOUDPAYMENTS_KKT', $kkt);
+                Configuration::updateValue('CLOUDPAYMENTS_KKT_DELIVERED', $kkt_delivered);
                 Configuration::updateValue('CLOUDPAYMENTS_TAXATION_SYSTEM', $taxSystem);
                 Configuration::updateValue('CLOUDPAYMENTS_SKIN', $skin);
                 Configuration::updateValue('CLOUDPAYMENTS_LANGUAGE', $language);
                 Configuration::updateValue('CLOUDPAYMENTS_CURRENCY', $currency);
+                Configuration::updateValue('CLOUDPAYMENTS_METHOD', $method);
+                Configuration::updateValue('CLOUDPAYMENTS_OBJECT', $object);
+                Configuration::updateValue('CLOUDPAYMENTS_INN', $inn);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
@@ -285,6 +313,28 @@ class Cloudpayments extends PaymentModule {
                     )
                 ),
                 array(
+                    'type'   => 'switch',
+                    'label'  => $this->l('Пробивать второй чек доставки'),
+                    'name'   => 'CLOUDPAYMENTS_KKT_DELIVERED',
+                    'values' => array(
+                        array(
+                            'id'    => 'kkt_delivered_active_on',
+                            'value' => 1,
+                        ),
+                        array(
+                            'id'    => 'kkt_delivered_active_off',
+                            'value' => 0,
+                        ),
+                    )
+                ),
+                array(
+                    'type'     => 'text',
+                    'label'    => $this->l('ИНН'),
+                    'name'     => 'CLOUDPAYMENTS_INN',
+                    'size'     => 32,
+                    'required' => false
+                ),
+                array(
                     'type'    => 'select',
                     'class'   => 'fixed-width-xxl',
                     'label'   => $this->l('Taxation system'),
@@ -297,6 +347,52 @@ class Cloudpayments extends PaymentModule {
                             array('id' => 3, 'name' => $this->l('A single tax on imputed income')),
                             array('id' => 4, 'name' => $this->l('Unified agricultural tax')),
                             array('id' => 5, 'name' => $this->l('Patent system of taxation')),
+                        ),
+                        'id'    => 'id',
+                        'name'  => 'name',
+                    )
+                ),
+                array(
+                    'type'    => 'select',
+                    'class'   => 'fixed-width-xxl',
+                    'label'   => $this->l('Метод оплаты'),
+                    'name'    => 'CLOUDPAYMENTS_METHOD',
+                    'options' => array(
+                        'query' => array(
+                            array('id' => 0, 'name' => $this->l('Неизвестный способ расчета')),
+                            array('id' => 1, 'name' => $this->l('Предоплата 100%')),
+                            array('id' => 2, 'name' => $this->l('Предоплата')),
+                            array('id' => 3, 'name' => $this->l('Аванс')),
+                            array('id' => 4, 'name' => $this->l('Полный расчёт')),
+                            array('id' => 5, 'name' => $this->l('Частичный расчёт и кредит')),
+                            array('id' => 6, 'name' => $this->l('Передача в кредит')),
+                            array('id' => 7, 'name' => $this->l('Оплата кредита')),
+                        ),
+                        'id'    => 'id',
+                        'name'  => 'name',
+                    )
+                ),
+                array(
+                    'type'    => 'select',
+                    'class'   => 'fixed-width-xxl',
+                    'label'   => $this->l('Предмет оплаты'),
+                    'name'    => 'CLOUDPAYMENTS_OBJECT',
+                    'options' => array(
+                        'query' => array(
+                            array('id' => 0, 'name' => $this->l('Неизвестный предмет оплаты')),
+                            array('id' => 1, 'name' => $this->l('Товар')),
+                            array('id' => 2, 'name' => $this->l('Подакцизный товар')),
+                            array('id' => 3, 'name' => $this->l('Работа')),
+                            array('id' => 4, 'name' => $this->l('Услуга')),
+                            array('id' => 5, 'name' => $this->l('Ставка азартной игры')),
+                            array('id' => 6, 'name' => $this->l('Выигрыш азартной игры')),
+                            array('id' => 7, 'name' => $this->l('Лотерейный билет')),
+                            array('id' => 8, 'name' => $this->l('Выигрыш лотереи')),
+                            array('id' => 9, 'name' => $this->l('Предоставление РИД')),
+                            array('id' => 10, 'name' => $this->l('Платеж')),
+                            array('id' => 11, 'name' => $this->l('Агентское вознаграждение')),
+                            array('id' => 12, 'name' => $this->l('Составной предмет расчета')),
+                            array('id' => 13, 'name' => $this->l('Иной предмет расчета')),
                         ),
                         'id'    => 'id',
                         'name'  => 'name',
@@ -344,10 +440,14 @@ class Cloudpayments extends PaymentModule {
         $helper->fields_value['CLOUDPAYMENTS_PAYSTAGE']        = Configuration::get('CLOUDPAYMENTS_PAYSTAGE');
         $helper->fields_value['CLOUDPAYMENTS_APIKEY']          = Configuration::get('CLOUDPAYMENTS_APIKEY');
         $helper->fields_value['CLOUDPAYMENTS_KKT']             = Configuration::get('CLOUDPAYMENTS_KKT');
+        $helper->fields_value['CLOUDPAYMENTS_KKT_DELIVERED']    = Configuration::get('CLOUDPAYMENTS_KKT_DELIVERED');
         $helper->fields_value['CLOUDPAYMENTS_TAXATION_SYSTEM'] = Configuration::get('CLOUDPAYMENTS_TAXATION_SYSTEM');
         $helper->fields_value['CLOUDPAYMENTS_SKIN']            = Configuration::get('CLOUDPAYMENTS_SKIN');
         $helper->fields_value['CLOUDPAYMENTS_LANGUAGE']        = Configuration::get('CLOUDPAYMENTS_LANGUAGE');
         $helper->fields_value['CLOUDPAYMENTS_CURRENCY']        = Configuration::get('CLOUDPAYMENTS_CURRENCY');
+        $helper->fields_value['CLOUDPAYMENTS_OBJECT']          = Configuration::get('CLOUDPAYMENTS_OBJECT');
+        $helper->fields_value['CLOUDPAYMENTS_METHOD']          = Configuration::get('CLOUDPAYMENTS_METHOD');
+        $helper->fields_value['CLOUDPAYMENTS_INN']             = Configuration::get('CLOUDPAYMENTS_INN');
 
         $anotherHtml = '';
         if (Configuration::get('CLOUDPAYMENTS_APIKEY')) {
@@ -426,6 +526,24 @@ class Cloudpayments extends PaymentModule {
 
         return $this->display(__FILE__, 'payment.tpl');
     }
+    
+    public function validateOrder(
+        $id_cart,
+        $id_order_state,
+        $amount_paid,
+        $payment_method = 'Unknown',
+        $message = null,
+        $extra_vars = array(),
+        $currency_special = null,
+        $dont_touch_amount = false,
+        $secure_key = false,
+        Shop $shop = null
+    )
+    {
+        parent::validateOrder($id_cart, $id_order_state, $amount_paid,
+            $payment_method, $message, $extra_vars, $currency_special,
+            $dont_touch_amount, $secure_key, $shop);
+    }
 
     public function hookPaymentOptions($params) {
         if (!Configuration::get('CLOUDPAYMENTS_PUBLICID')) {
@@ -462,9 +580,9 @@ class Cloudpayments extends PaymentModule {
 
     public function getEmbeddedPaymentOption($params) {
         $embeddedOption = new PrestaShop\PrestaShop\Core\Payment\PaymentOption();
-        $embeddedOption->setCallToActionText($this->l('Cloudpayments'))
-                       ->setForm($this->generateEmbeddedForm($params))
-                       ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_ . $this->name . '/views/img/logo_45x45.png'));
+        $embeddedOption	->setCallToActionText($this->l('Cloudpayments'))
+                       	->setForm($this->generateEmbeddedForm($params))
+                       	->setLogo(Media::getMediaPath(_PS_MODULE_DIR_ . $this->name . '/views/img/logo_45x45.png'));
 
         return $embeddedOption;
     }
@@ -512,7 +630,7 @@ class Cloudpayments extends PaymentModule {
             'payType'    => Configuration::get('CLOUDPAYMENTS_PAYSTAGE') ? 'auth' : 'charge',
             'successUrl' => $this->context->link->getModuleLink($this->name, 'success', array()),
         ));
-
+	
         return $this->context->smarty->fetch('module:cloudpayments/views/templates/front/payment_form.tpl');
     }
 
@@ -523,7 +641,77 @@ class Cloudpayments extends PaymentModule {
 
         return isset(self::$vat_enum[$vat]) ? self::$vat_enum[$vat] : '';
     }
+    
+    public function hookActionOrderStatusPostUpdate($params) {
+        
+	$order_id = $params['id_order'];
+	$order =new Order($order_id);
+	$cart_id = $order-> id_cart;
+	$delivered_id = Configuration::get('PS_OS_DELIVERED');
+    $newOrderStatus = $params['newOrderStatus']->id;
 
+    if (Configuration::get('CLOUDPAYMENTS_KKT') && Configuration::get('CLOUDPAYMENTS_KKT_DELIVERED') && $newOrderStatus == $delivered_id && 
+        (Configuration::get('CLOUDPAYMENTS_METHOD') == 1 || Configuration::get('CLOUDPAYMENTS_METHOD') ==2 || Configuration::get('CLOUDPAYMENTS_METHOD') == 3)) {
+            
+            $cart = new Cart($cart_id);
+            $customer = new Customer((int)$cart->id_customer);
+            $email = $customer->email;
+            $totalPay = $cart->getOrderTotal(true);
+            $taxSystem   = Configuration::get('CLOUDPAYMENTS_TAXATION_SYSTEM');
+            $receiptData = array(
+                "Inn"=> Configuration::get('CLOUDPAYMENTS_INN'),
+                "InvoiceId"=> $cart_id,
+                "Type"=> "Income",
+                "CustomerReceipt"=>array(
+                    'taxationSystem'  => $taxSystem,
+                    'calculationPlace'=> $_SERVER['SERVER_NAME'],
+                    'email'           => $email,
+                    "amounts"         => array("advancePayment" => $totalPay),
+		            'Items'           => array(),
+                )
+            );
+
+            $products = $cart->getProducts();
+            foreach ($products as $product) {
+                $receiptData['CustomerReceipt']['Items'][] = array(
+                    'label'    => $product['name'] . ' ' . $product['attributes_small'],
+                    'price'    => sprintf('%0.2F', $product['price_wt']),
+                    'quantity' => floatval($product['quantity']),
+                    'amount'   => sprintf('%0.2F', $product['total_wt']),
+                    'vat'      => $this->getVatValue($product['rate']),
+                    'method'   => 4,
+                    'object'   => Configuration::get('CLOUDPAYMENTS_OBJECT'),
+                );
+            }
+            $deliveryCost = $cart->getOrderTotal(true, Cart::ONLY_SHIPPING);
+            if ($deliveryCost > 0) {
+                $carrier                = new Carrier($cart->id_carrier);
+                $address                = new Address($cart->id_address_delivery);
+                $receiptData['CustomerReceipt']['Items'][] = array(
+                    'label'    => $this->l('Delivery'),
+                    'price'    => sprintf('%0.2F', $deliveryCost),
+                    'quantity' => 1,
+                    'amount'   => sprintf('%0.2F', $deliveryCost),
+                    'vat'      => $this->getVatValue($carrier->getTaxesRate($address)),
+                    'method'   => 4,
+                    'object'   => 4,
+                );
+            }
+            
+           	$ch = curl_init("https://api.cloudpayments.ru/kkt/receipt");
+            curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+            curl_setopt($ch, CURLOPT_USERPWD, Configuration::get('CLOUDPAYMENTS_PUBLICID') . ":" . Configuration::get('CLOUDPAYMENTS_APIKEY'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER,true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json"));
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($receiptData, JSON_UNESCAPED_UNICODE));
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+        }
+    }
+    
     private function getReceiptData($customerPhone) {
         $cart        = $this->context->cart;
         $totalPay = $cart->getOrderTotal(true);
@@ -531,7 +719,7 @@ class Cloudpayments extends PaymentModule {
         $receiptData = array(
             'Items'           => array(),
             'taxationSystem'  => $taxSystem,
-            'calculationPlace'=>'www.'.$_SERVER['SERVER_NAME'],
+            'calculationPlace'=> $_SERVER['SERVER_NAME'],
             'email'           => $this->context->customer->email,
             'phone'           => $customerPhone,
             "amounts"         => array("electronic" => $totalPay)
@@ -544,7 +732,9 @@ class Cloudpayments extends PaymentModule {
                 'price'    => sprintf('%0.2F', $product['price_wt']),
                 'quantity' => floatval($product['quantity']),
                 'amount'   => sprintf('%0.2F', $product['total_wt']),
-                'vat'      => $this->getVatValue($product['rate'])
+                'vat'      => $this->getVatValue($product['rate']),
+                'method'   => Configuration::get('CLOUDPAYMENTS_METHOD'),
+                'object'   => Configuration::get('CLOUDPAYMENTS_OBJECT'),
             );
         }
         $deliveryCost = $this->context->cart->getOrderTotal(true, Cart::ONLY_SHIPPING);
@@ -556,10 +746,11 @@ class Cloudpayments extends PaymentModule {
                 'price'    => sprintf('%0.2F', $deliveryCost),
                 'quantity' => 1,
                 'amount'   => sprintf('%0.2F', $deliveryCost),
-                'vat'      => $this->getVatValue($carrier->getTaxesRate($address))
+                'vat'      => $this->getVatValue($carrier->getTaxesRate($address)),
+                'method'   => Configuration::get('CLOUDPAYMENTS_METHOD'),
+                'object'   => 4,
             );
         }
-
         return $receiptData;
     }
 
