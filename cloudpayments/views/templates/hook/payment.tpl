@@ -17,7 +17,7 @@
 </style>
 <script>
 this.pay = function () {
-    var widget = new cp.CloudPayments('{$language}');
+    var widget = new cp.CloudPayments();
     widget.{$payType}({ // options
             publicId: '{$publicId}',  //id из личного кабинета
             description: '{$description}', //назначение
