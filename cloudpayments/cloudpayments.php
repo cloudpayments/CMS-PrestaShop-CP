@@ -12,6 +12,7 @@ class Cloudpayments extends PaymentModule {
         '' => '',
         0  => 0,
         10 => 10,
+        12 => 12,
         20 => 20,
         110 => 110,
         120 => 120,
@@ -74,6 +75,8 @@ class Cloudpayments extends PaymentModule {
             $taxSystem     = Tools::getValue('CLOUDPAYMENTS_TAXATION_SYSTEM');
             $skin          = Tools::getValue('CLOUDPAYMENTS_SKIN');
             $language      = Tools::getValue('CLOUDPAYMENTS_LANGUAGE');
+	          $spic          = Tools::getValue('CLOUDPAYMENTS_SPIC');
+		        $packagecode   = Tools::getValue('CLOUDPAYMENTS_PACKAGECODE');
             $currency      = Tools::getValue('CLOUDPAYMENTS_CURRENCY');
             $method        = Tools::getValue('CLOUDPAYMENTS_METHOD');
             $object        = Tools::getValue('CLOUDPAYMENTS_OBJECT');
@@ -153,6 +156,8 @@ class Cloudpayments extends PaymentModule {
                 Configuration::updateValue('CLOUDPAYMENTS_TAXATION_SYSTEM', $taxSystem);
                 Configuration::updateValue('CLOUDPAYMENTS_SKIN', $skin);
                 Configuration::updateValue('CLOUDPAYMENTS_LANGUAGE', $language);
+								Configuration::updateValue('CLOUDPAYMENTS_SPIC', $spic);
+	              Configuration::updateValue('CLOUDPAYMENTS_PACKAGECODE', $packagecode);
                 Configuration::updateValue('CLOUDPAYMENTS_CURRENCY', $currency);
                 Configuration::updateValue('CLOUDPAYMENTS_METHOD', $method);
                 Configuration::updateValue('CLOUDPAYMENTS_OBJECT', $object);
@@ -240,6 +245,7 @@ class Cloudpayments extends PaymentModule {
                                             array('id' => 'pl', 'name' => $this->l('Polish')),
                                             array('id' => 'pt', 'name' => $this->l('Portuguese')),
                                             array('id' => 'cs-CZ', 'name' => $this->l('Czech')),
+                                            array('id' => 'uz', 'name' => $this->l('Uzbek')),
                                      ),
                                 'id'    => 'id',
                                 'name'  => 'name',
@@ -271,8 +277,8 @@ class Cloudpayments extends PaymentModule {
                                             array('id' => 'INR', 'name' => $this->l('Indian rupee')),
                                             array('id' => 'BRL', 'name' => $this->l('Brazilian real')),
                                             array('id' => 'ZAL', 'name' => $this->l('South african rand')),
-                                            array('id' => 'UZS', 'name' => $this->l('Bulgarian lev')),
-                                            array('id' => 'BGL', 'name' => $this->l('Uzbek sum')),
+                                            array('id' => 'BGL', 'name' => $this->l('Bulgarian lev')),
+                                            array('id' => 'UZS', 'name' => $this->l('Uzbek sum')),
                                             array('id' => 'GEL', 'name' => $this->l('Georgian lari')),
                                      ),
                                 'id'    => 'id',
@@ -398,6 +404,20 @@ class Cloudpayments extends PaymentModule {
                         'name'  => 'name',
                     )
                 ),
+		            array(
+			            'type'     => 'text',
+			            'label'    => $this->l('Код ИКПУ доставки'),
+			            'name'     => 'CLOUDPAYMENTS_SPIC',
+			            'size'     => 32,
+			            'required' => false
+		            ),
+		            array(
+			            'type'     => 'text',
+			            'label'    => $this->l('Код упаковки доставки'),
+			            'name'     => 'CLOUDPAYMENTS_PACKAGECODE',
+			            'size'     => 32,
+			            'required' => false
+		            ),
             ),
             'submit' => array(
                 'title' => $this->l('Save'),
@@ -448,6 +468,8 @@ class Cloudpayments extends PaymentModule {
         $helper->fields_value['CLOUDPAYMENTS_OBJECT']          = Configuration::get('CLOUDPAYMENTS_OBJECT');
         $helper->fields_value['CLOUDPAYMENTS_METHOD']          = Configuration::get('CLOUDPAYMENTS_METHOD');
         $helper->fields_value['CLOUDPAYMENTS_INN']             = Configuration::get('CLOUDPAYMENTS_INN');
+        $helper->fields_value['CLOUDPAYMENTS_SPIC']            = Configuration::get('CLOUDPAYMENTS_SPIC');
+        $helper->fields_value['CLOUDPAYMENTS_PACKAGECODE']     = Configuration::get('CLOUDPAYMENTS_PACKAGECODE');
 
         $anotherHtml = '';
         if (Configuration::get('CLOUDPAYMENTS_APIKEY')) {
@@ -518,6 +540,8 @@ class Cloudpayments extends PaymentModule {
             'currency'       => $currency1,
             'rubCurrencyId'  => $rubCurrencyId,
             'language'       => Configuration::get('CLOUDPAYMENTS_LANGUAGE'),
+						'spic'           => Configuration::get('CLOUDPAYMENTS_SPIC'),
+						'packagecode'    => Configuration::get('CLOUDPAYMENTS_PACKAGECODE'),
             'accountId'      => $this->context->customer->email,
             'additionalData' => json_encode($additionalData)
         ));
@@ -727,7 +751,7 @@ class Cloudpayments extends PaymentModule {
 
         $products = $cart->getProducts();
         foreach ($products as $product) {
-            $receiptData['Items'][] = array(
+            $item = array(
                 'label'    => $product['name'] . ' ' . $product['attributes_small'],
                 'price'    => sprintf('%0.2F', $product['price_wt']),
                 'quantity' => floatval($product['quantity']),
@@ -736,12 +760,20 @@ class Cloudpayments extends PaymentModule {
                 'method'   => Configuration::get('CLOUDPAYMENTS_METHOD'),
                 'object'   => Configuration::get('CLOUDPAYMENTS_OBJECT'),
             );
+		        $features_list = Product::getFrontFeaturesStatic(Context::getContext()->language->id, $product['id_product']);
+						foreach ($features_list as $features) {
+							if ($features['name'] === 'spic') $item['spic'] = $features['value'];
+							if ($features['name'] === 'packagecode') $item['packagecode'] = $features['value'];
+						}
+						if (isset($item['packagecode']) && isset($item['spic']))
+							$receiptData['AdditionalReceiptInfos'] = ['Вы стали обладателем права на 1% cashback']; // Это статичное значение
+	          $receiptData['Items'][] = $item;
         }
         $deliveryCost = $this->context->cart->getOrderTotal(true, Cart::ONLY_SHIPPING);
         if ($deliveryCost > 0) {
             $carrier                = new Carrier($this->context->cart->id_carrier);
             $address                = new Address($this->context->cart->id_address_delivery);
-            $receiptData['Items'][] = array(
+            $ship_item = array(
                 'label'    => $this->l('Delivery'),
                 'price'    => sprintf('%0.2F', $deliveryCost),
                 'quantity' => 1,
@@ -750,6 +782,10 @@ class Cloudpayments extends PaymentModule {
                 'method'   => Configuration::get('CLOUDPAYMENTS_METHOD'),
                 'object'   => 4,
             );
+	        if ($spic = Configuration::get('CLOUDPAYMENTS_SPIC')) $ship_item['spic'] = $spic;
+	        if ($packagecode = Configuration::get('CLOUDPAYMENTS_PACKAGECODE')) $ship_item['packagecode'] = $packagecode;
+	        
+	        $receiptData['Items'][] = $ship_item;
         }
         return $receiptData;
     }

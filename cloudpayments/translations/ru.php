@@ -32,6 +32,7 @@ $_MODULE['<{cloudpayments}prestashop>cloudpayments_e78a6fc14ad64f7a78386b20568ce
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_c730389bc8d99e59c867766babdd48b5'] = 'Польский';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_30e32c7c4cf434e9c75e60c14c442541'] = 'Португальский';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_83ff4480cdf2900ae83bf30d95774d76'] = 'Чешский';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_ca20f547f2f65dbf6d23b0395419dd43'] = 'Узбекский';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_b8ea4f70a6389a84b58da911c7bad4cd'] = 'Валюта сайта';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_45f4aaa28f2577bf34d7cb6f738de391'] = 'Российский рубль';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_3e823fac7473e42888932c7761c224fc'] = 'Евро';
@@ -56,6 +57,7 @@ $_MODULE['<{cloudpayments}prestashop>cloudpayments_129090a32f3e79d08753d519faf8f
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_7618d578b5639ee5ead2e45c93e96c0b'] = 'Грузинское лари';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_f20d26bfed8376985e66ade19e580edf'] = 'одностадийный';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_66cd6fffc49e086508eeea8eaad999c0'] = 'двустадийный';
+$_MODULE['<{cloudpayments}prestashop>cloudpayments_5b0ec5432ff08ebc0bc84f82ec69e867'] = 'INN';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_fd2678e25a02f7fc269bd66d761f51e9'] = 'Общая система налогообложения';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_2d73cbebe17979d20e7099a594ba7811'] = 'Упрощенная система налогообложения (Доход)';
 $_MODULE['<{cloudpayments}prestashop>cloudpayments_ed7cc00c1554e1e4f771c3e91d73435d'] = 'Упрощенная система налогообложения (Доход минус Расход)';
